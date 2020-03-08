@@ -1,33 +1,57 @@
-from uuid import uuid4
 from app.exceptions import RoleAlreadyExists, RoleDoesnotExists
+from app.entities.base import BaseEntity
+from app.entities.role import Role
+from app.utils import get_operation_identifier
 
 
-USERS = {}
-
-
-class User(object):
-    id = None
+class User(BaseEntity):
     name = None
-
-    # stores all the roles that this particular user have, id of the roles is store here only
-    roles = []
-
-    # internal pre-calculate HashMap that holds whether the particular Resource+Operations is accessible or not
-    _accessible_ops = {}
 
     def __init__(self, name=None):
         self.name = name
 
-    def save(self):
-        self.id = uuid4()
-        USERS[self.id] = self
+        # stores all the roles that this particular user have, id of the roles is store here only
+        self.roles = set()
+
+        # internal pre-calculate HashMap that holds whether the particular Resource+Operations is accessible or not
+        self._accessible_ops = {}
+
+        super().__init__()
+
+    # ##custom operations for role entity## #
 
     def add_role(self, role):
         if role in self.roles:
             raise RoleAlreadyExists("This role is already assigned to this user.")
-        self.roles.append(role)
+        self.roles.add(role.id)
+
+        # update reverse mapping of roles to user
+        role.add_user(self)
+
+        self.sync_accessible_ops()
 
     def remove_role(self, role):
         if role not in self.roles:
             raise RoleAlreadyExists("This role is not assigned to this user.")
-        self.roles.remove(role)
+        self.roles.remove(role.id)
+
+        # update reverse mapping of roles to user
+        role.remove_user(self)
+
+        self.sync_accessible_ops()
+
+    def add_accessible_ops(self, operation_id):
+        self._accessible_ops[operation_id] = True
+
+    def remove_accessible_ops(self, operation_id):
+        self._accessible_ops[operation_id] = False
+
+    def sync_accessible_ops(self):
+        self._accessible_ops = dict()
+        for role_id in self.roles:
+            role = Role.get(role_id)
+            for operation in role.allowed_operations:
+                self._accessible_ops[operation] = True
+
+    def is_operation_allowed(self, resource, action_type):
+        return self._accessible_ops.get(get_operation_identifier(resource, action_type), False)

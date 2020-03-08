@@ -18,10 +18,13 @@ class User(BaseEntity):
 
         super().__init__()
 
+    def __str__(self):
+        return self.name
+
     # ##custom operations for role entity## #
 
     def add_role(self, role):
-        if role in self.roles:
+        if role.id in self.roles:
             raise RoleAlreadyExists("This role is already assigned to this user.")
         self.roles.add(role.id)
 
@@ -31,7 +34,7 @@ class User(BaseEntity):
         self.sync_accessible_ops()
 
     def remove_role(self, role):
-        if role not in self.roles:
+        if role.id not in self.roles:
             raise RoleAlreadyExists("This role is not assigned to this user.")
         self.roles.remove(role.id)
 

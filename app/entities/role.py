@@ -16,6 +16,9 @@ class Role(BaseEntity):
 
         super().__init__()
 
+    def __str__(self):
+        return self.name
+
     # ##custom operations for role entity## #
 
     def bulk_add_allowed_operations(self, operations):

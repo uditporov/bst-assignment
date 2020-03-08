@@ -1,6 +1,7 @@
 from app import *
 from app.entities import User, Role, Resource, ActionType
 from app.utils import get_operation_identifier
+from app.menu import Menu
 
 
 def load_initial_data():
@@ -48,8 +49,28 @@ def load_initial_data():
     read_role.bulk_add_allowed_operations(read_operations)
     read_role.save()
 
+    delete_role = Role("delete-role")
+    delete_operations = set()
+    for resource in Resource.get_all():
+        delete_operations.add(get_operation_identifier(resource, delete_action))
+    delete_role.bulk_add_allowed_operations(delete_operations)
+    delete_role.save()
+
+    create_role = Role("create-role")
+    create_operations = set()
+    for resource in Resource.get_all():
+        create_operations.add(get_operation_identifier(resource, create_action))
+    create_role.bulk_add_allowed_operations(create_operations)
+    create_role.save()
+
     # assign roles to users
     admin.add_role(admin_role)
     user1.add_role(read_role)
 
+    return admin
 
+
+def run():
+    admin_user = load_initial_data()
+    menu = Menu(admin_user)
+    menu.render()

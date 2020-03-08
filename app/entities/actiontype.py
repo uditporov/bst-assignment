@@ -7,3 +7,6 @@ class ActionType(BaseEntity):
     def __init__(self, name=None):
         self.name = name
         super().__init__()
+
+    def __str__(self):
+        return self.name
